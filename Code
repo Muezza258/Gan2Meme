@@ -6,3 +6,61 @@ import torch
 pipe = StableDiffusionPipeline.from_pretrained(
     "runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16
 ).to("cuda")
+
+#load GPT-2 for captions 
+from transformers import pipeline
+captioner = pipeline("text-generation", model="gpt2")
+
+
+#code body
+from PIL import ImageFont, ImageDraw
+
+def add_caption(img, text, scale=0.12, y_offset=30):
+    """
+    scale = fraction of image width used for font size (0.12 = 12%)
+    y_offset = pixels from top
+    """
+    img = img.convert("RGB")
+    draw = ImageDraw.Draw(img)
+
+    # Font size relative to width
+    font_size = int(img.width * scale)
+
+    # Guaranteed font (Liberation Sans)
+    font_path = "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
+    font = ImageFont.truetype(font_path, font_size)
+
+    # Dynamic wrapping: break into lines that fit the image width
+    words = text.split()
+    lines, current_line = [], ""
+    for word in words:
+        test_line = current_line + (" " if current_line else "") + word
+        if font.getlength(test_line) <= img.width * 0.9:  # 90% of width
+            current_line = test_line
+        else:
+            lines.append(current_line)
+            current_line = word
+    if current_line:
+        lines.append(current_line)
+
+    wrapped = "\n".join(lines)
+
+    # Measure text box
+    bbox = draw.multiline_textbbox((0,0), wrapped, font=font)
+    w, h = bbox[2]-bbox[0], bbox[3]-bbox[1]
+
+    # Center at top
+    W, H = img.size
+    draw.multiline_text(((W-w)/2, y_offset), wrapped, font=font,
+                        fill="white", stroke_width=3, stroke_fill="black",
+                        align="center")
+    return img
+
+
+#The playgroud
+prompt = "cat face"
+face = pipe(prompt, guidance_scale=9.5).images[0]
+
+caption = make_caption()
+meme = add_caption(face, caption, scale=0.05)  # try 18% of width
+display(meme)
