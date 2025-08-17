@@ -1,0 +1,8 @@
+#Install the dependencies
+pip install torch torchvision transformers pillow requests
+!pip install diffusers accelerate transformers safetensors
+from diffusers import StableDiffusionPipeline
+import torch
+pipe = StableDiffusionPipeline.from_pretrained(
+    "runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16
+).to("cuda")
