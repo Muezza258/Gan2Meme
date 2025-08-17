@@ -11,6 +11,18 @@ pipe = StableDiffusionPipeline.from_pretrained(
 from transformers import pipeline
 captioner = pipeline("text-generation", model="gpt2")
 
+# Helper function to create meme captions
+def make_caption():
+    result = captioner(
+        "Meme caption:", 
+        max_new_tokens=15,
+        num_return_sequences=1,
+        do_sample=True,
+        temperature=0.9,
+        top_k=50
+    )[0]['generated_text']
+    return result.replace("Meme caption:", "").strip()
+
 
 #code body
 from PIL import ImageFont, ImageDraw
